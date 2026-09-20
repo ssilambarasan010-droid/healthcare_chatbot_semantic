@@ -1,0 +1,1768 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Smily - AI Healthcare Assistant</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: #09090f;
+      --panel: #11111a;
+      --panel-2: #171722;
+      --border: rgba(255, 255, 255, 0.08);
+
+      --pink: #ff4fa3;
+      --purple: #9b5cff;
+      --blue: #4c8dff;
+
+      --text: #f7f7fb;
+      --muted: #9696a7;
+
+      --user-bubble: linear-gradient(135deg,
+          #9b5cff,
+          #ff4fa3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      background:
+        radial-gradient(circle at 20% 10%,
+          rgba(155, 92, 255, 0.16),
+          transparent 30%),
+        radial-gradient(circle at 90% 80%,
+          rgba(255, 79, 163, 0.12),
+          transparent 30%),
+        var(--bg);
+
+      color: var(--text);
+
+      font-family:
+        Inter,
+        "Segoe UI",
+        system-ui,
+        sans-serif;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* ==============================
+       APP
+    ============================== */
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+
+      height: 92vh;
+      max-height: 850px;
+
+      display: flex;
+
+      background: rgba(17, 17, 26, 0.94);
+
+      border: 1px solid var(--border);
+      border-radius: 28px;
+
+      overflow: hidden;
+
+      box-shadow:
+        0 30px 100px rgba(0, 0, 0, 0.55);
+
+      backdrop-filter: blur(20px);
+    }
+
+    /* ==============================
+       SIDEBAR
+    ============================== */
+
+    .sidebar {
+      width: 250px;
+
+      background: rgba(10, 10, 16, 0.8);
+
+      border-right: 1px solid var(--border);
+
+      padding: 24px 18px;
+
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+
+      gap: 12px;
+
+      margin-bottom: 30px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+
+      border-radius: 14px;
+
+      object-fit: cover;
+
+      background:
+        linear-gradient(135deg,
+          var(--purple),
+          var(--pink));
+
+      padding: 2px;
+    }
+
+    .brand-text h1 {
+      margin: 0;
+
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .brand-text p {
+      margin: 2px 0 0;
+
+      font-size: 11px;
+
+      color: var(--muted);
+    }
+
+    .new-chat {
+      width: 100%;
+
+      border: 1px solid var(--border);
+
+      background:
+        linear-gradient(135deg,
+          rgba(155, 92, 255, 0.18),
+          rgba(255, 79, 163, 0.12));
+
+      color: white;
+
+      padding: 12px;
+
+      border-radius: 14px;
+
+      cursor: pointer;
+
+      font-weight: 600;
+
+      margin-bottom: 25px;
+    }
+
+    .new-chat:hover {
+      transform: translateY(-1px);
+    }
+
+    .sidebar-title {
+      color: var(--muted);
+
+      font-size: 11px;
+
+      text-transform: uppercase;
+
+      letter-spacing: 1px;
+
+      margin: 5px 8px 10px;
+    }
+
+    .history-item {
+      padding: 11px 12px;
+
+      border-radius: 10px;
+
+      color: #c5c5d1;
+
+      font-size: 13px;
+
+      cursor: pointer;
+    }
+
+    .history-item:hover {
+      background:
+        rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+    }
+
+    .login-user {
+      display: none;
+
+      align-items: center;
+
+      gap: 10px;
+
+      padding: 10px;
+
+      background:
+        rgba(255, 255, 255, 0.04);
+
+      border-radius: 12px;
+
+      margin-bottom: 10px;
+    }
+
+    .login-user img {
+      width: 34px;
+      height: 34px;
+
+      border-radius: 50%;
+    }
+
+    .login-user-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .login-user-info strong {
+      display: block;
+
+      font-size: 12px;
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+    }
+
+    .login-user-info span {
+      display: block;
+
+      font-size: 10px;
+
+      color: var(--muted);
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+    }
+
+    .logout-btn {
+      border: 0;
+
+      background: transparent;
+
+      color: #ff7eb7;
+
+      cursor: pointer;
+
+      font-size: 11px;
+    }
+
+    /* ==============================
+       MAIN
+    ============================== */
+
+    .main {
+      flex: 1;
+
+      min-width: 0;
+
+      display: flex;
+
+      flex-direction: column;
+    }
+
+    .topbar {
+      height: 75px;
+
+      border-bottom: 1px solid var(--border);
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      padding: 0 24px;
+    }
+
+    .assistant-title {
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+    }
+
+    .online-dot {
+      width: 9px;
+      height: 9px;
+
+      background: #55e39a;
+
+      border-radius: 50%;
+
+      box-shadow:
+        0 0 12px #55e39a;
+    }
+
+    .assistant-title strong {
+      font-size: 15px;
+    }
+
+    .assistant-title span {
+      display: block;
+
+      color: var(--muted);
+
+      font-size: 11px;
+
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+
+      align-items: center;
+
+      gap: 8px;
+    }
+
+    .language {
+      background: var(--panel-2);
+
+      color: white;
+
+      border: 1px solid var(--border);
+
+      border-radius: 10px;
+
+      padding: 8px 10px;
+
+      font-size: 12px;
+
+      outline: none;
+    }
+
+    .google-login {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+
+      background: white;
+
+      color: #222;
+
+      padding: 9px 14px;
+
+      border-radius: 10px;
+
+      cursor: pointer;
+
+      font-weight: 600;
+
+      font-size: 12px;
+    }
+
+    .google-login:hover {
+      opacity: 0.9;
+    }
+
+    /* ==============================
+       CHAT
+    ============================== */
+
+    .chat-window {
+      flex: 1;
+
+      overflow-y: auto;
+
+      padding: 35px 8%;
+
+      display: flex;
+
+      flex-direction: column;
+
+      gap: 18px;
+
+      scroll-behavior: smooth;
+    }
+
+    .welcome {
+      text-align: center;
+
+      margin:
+        auto auto 10px;
+
+      max-width: 520px;
+    }
+
+    .welcome-logo {
+      width: 72px;
+      height: 72px;
+
+      border-radius: 24px;
+
+      object-fit: cover;
+
+      margin-bottom: 15px;
+
+      box-shadow:
+        0 0 35px rgba(155, 92, 255, 0.25),
+        0 0 45px rgba(255, 79, 163, 0.12);
+    }
+
+    .welcome h2 {
+      margin: 0;
+
+      font-size: 28px;
+
+      font-weight: 800;
+
+      background:
+        linear-gradient(90deg,
+          #fff,
+          #d7c6ff,
+          #ffb8d8);
+
+      -webkit-background-clip: text;
+
+      color: transparent;
+    }
+
+    .welcome p {
+      margin: 10px 0 0;
+
+      color: var(--muted);
+
+      font-size: 13px;
+
+      line-height: 1.6;
+    }
+
+    .msg {
+      max-width: 75%;
+
+      padding: 13px 16px;
+
+      border-radius: 17px;
+
+      font-size: 14px;
+
+      line-height: 1.55;
+
+      word-wrap: break-word;
+
+      animation:
+        messageIn 0.2s ease;
+    }
+
+    @keyframes messageIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .msg.user {
+      align-self: flex-end;
+
+      background:
+        var(--user-bubble);
+
+      color: white;
+
+      border-bottom-right-radius: 5px;
+
+      box-shadow:
+        0 8px 25px rgba(155, 92, 255, 0.18);
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+
+      background: #191923;
+
+      border: 1px solid var(--border);
+
+      color: #eeeeF5;
+
+      border-bottom-left-radius: 5px;
+    }
+
+    .msg.bot a {
+      color: #a98cff;
+    }
+
+    .meta {
+      display: block;
+
+      margin-top: 7px;
+
+      color: var(--muted);
+
+      font-size: 10px;
+    }
+
+    .msg img {
+      max-width: 100%;
+
+      border-radius: 12px;
+
+      margin-top: 10px;
+
+      display: block;
+    }
+
+    /* ==============================
+       QUICK REPLIES
+    ============================== */
+
+    .quick-replies {
+      display: flex;
+
+      gap: 8px;
+
+      padding:
+        0 8% 14px;
+
+      flex-wrap: wrap;
+    }
+
+    .quick-replies button {
+      border: 1px solid var(--border);
+
+      background: #15151f;
+
+      color: #cfcfda;
+
+      border-radius: 999px;
+
+      padding: 8px 13px;
+
+      font-size: 11px;
+
+      cursor: pointer;
+    }
+
+    .quick-replies button:hover {
+      border-color:
+        rgba(155, 92, 255, 0.5);
+
+      color: white;
+
+      background: #1b1a29;
+    }
+
+    /* ==============================
+       INPUT
+    ============================== */
+
+    .input-area {
+      padding:
+        0 8% 10px;
+    }
+
+    .input-box {
+      display: flex;
+
+      align-items: center;
+
+      gap: 10px;
+
+      background: #171721;
+
+      border: 1px solid var(--border);
+
+      border-radius: 18px;
+
+      padding:
+        7px 8px 7px 16px;
+
+      transition: 0.2s;
+    }
+
+    .input-box:focus-within {
+      border-color:
+        rgba(155, 92, 255, 0.55);
+
+      box-shadow:
+        0 0 25px rgba(155, 92, 255, 0.08);
+    }
+
+    .input-box input {
+      flex: 1;
+
+      background: transparent;
+
+      border: none;
+
+      outline: none;
+
+      color: white;
+
+      font-size: 14px;
+
+      min-width: 0;
+    }
+
+    .input-box input::placeholder {
+      color: #777789;
+    }
+
+    .send-btn {
+      width: 42px;
+      height: 42px;
+
+      border: none;
+
+      border-radius: 13px;
+
+      background:
+        linear-gradient(135deg,
+          var(--purple),
+          var(--pink));
+
+      color: white;
+
+      cursor: pointer;
+
+      font-size: 18px;
+
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      transform: scale(1.04);
+    }
+
+    .disclaimer {
+      text-align: center;
+
+      padding:
+        7px 20px 15px;
+
+      color: #686879;
+
+      font-size: 10px;
+    }
+
+    /* ==============================
+       MOBILE
+    ============================== */
+
+    @media (max-width: 750px) {
+
+      body {
+        align-items: stretch;
+      }
+
+      .app {
+        height: 100vh;
+
+        max-height: none;
+
+        border-radius: 0;
+
+        border: none;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .topbar {
+        padding: 0 15px;
+      }
+
+      .chat-window {
+        padding: 25px 15px;
+      }
+
+      .quick-replies,
+      .input-area {
+        padding-left: 15px;
+
+        padding-right: 15px;
+      }
+
+      .msg {
+        max-width: 88%;
+      }
+
+      .welcome h2 {
+        font-size: 23px;
+      }
+
+      .language {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+
+<body>
+
+  <div class="app">
+
+    <!-- ==============================
+         SIDEBAR
+    ============================== -->
+
+    <aside class="sidebar">
+
+      <div class="brand">
+
+        <img src="logo.png" class="brand-logo" alt="Smily Logo">
+
+        <div class="brand-text">
+
+          <h1>Smily</h1>
+
+          <p>
+            AI Healthcare Assistant
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <button class="new-chat" onclick="newChat()">
+        + New Chat
+      </button>
+
+
+      <div class="sidebar-title">
+        Recent
+      </div>
+
+
+      <div class="history-item">
+        Healthcare conversation
+      </div>
+
+      <div class="history-item">
+        Symptom analysis
+      </div>
+
+      <div class="history-item">
+        Health questions
+      </div>
+
+
+      <div class="sidebar-bottom">
+
+        <div class="login-user" id="loginUser">
+
+          <img id="userAvatar" src="" alt="User">
+
+          <div class="login-user-info">
+
+            <strong id="userName">
+              User
+            </strong>
+
+            <span id="userEmail">
+              user@email.com
+            </span>
+
+          </div>
+
+
+          <button class="logout-btn" onclick="logout()">
+            Logout
+          </button>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ==============================
+         MAIN
+    ============================== -->
+
+    <main class="main">
+
+
+      <!-- TOP BAR -->
+
+      <header class="topbar">
+
+        <div class="assistant-title">
+
+          <span class="online-dot"></span>
+
+          <div>
+
+            <strong>
+              Smily AI
+            </strong>
+
+            <span>
+              Healthcare Assistant
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div class="top-actions">
+
+          <select id="langSelect" class="language">
+
+            <option value="en">
+              English
+            </option>
+
+            <option value="ta">
+              தமிழ்
+            </option>
+
+          </select>
+
+
+          <button id="googleLoginBtn" class="google-login">
+            Continue with Google
+          </button>
+
+        </div>
+
+      </header>
+
+
+      <!-- ==============================
+           CHAT
+      ============================== -->
+
+      <section class="chat-window" id="chatWindow">
+
+        <div class="welcome" id="welcome">
+
+          <img src="logo.png" class="welcome-logo" alt="Smily">
+
+          <h2>
+            How can I help you today?
+          </h2>
+
+          <p>
+            I'm Smily, your AI healthcare assistant.
+            Ask a health-related question and
+            I'll help you understand it.
+          </p>
+
+        </div>
+
+      </section>
+
+
+      <!-- ==============================
+           QUICK REPLIES
+      ============================== -->
+
+      <div class="quick-replies">
+
+        <button onclick="sendQuick('I have fever and headache')">
+          🤒 Fever & Headache
+        </button>
+
+
+        <button onclick="sendQuick('I have skin rash and itching')">
+          🩹 Skin Issue
+        </button>
+
+
+        <button onclick="sendQuick('I feel anxious and stressed')">
+          🧠 Mental Health
+        </button>
+
+
+        <button onclick="sendQuick('give me an image for weight gain routine')">
+          🥗 Weight Gain
+        </button>
+
+      </div>
+
+
+      <!-- ==============================
+           INPUT
+      ============================== -->
+
+      <div class="input-area">
+
+        <div class="input-box">
+
+          <input type="text" id="userInput" placeholder="Ask Smily anything about your health..." autocomplete="off">
+
+
+          <button class="send-btn" id="sendBtn" type="button" onclick="sendMessage()">
+            ➤
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <div class="disclaimer">
+
+        ℹ️ Informational only —
+        always consult a qualified healthcare professional.
+
+      </div>
+
+    </main>
+
+  </div>
+
+
+  <!-- ==============================
+       JAVASCRIPT
+  ============================== -->
+
+  <script>
+
+    /* =====================================================
+       SUPABASE
+    ===================================================== */
+
+    const SUPABASE_URL =
+      "https://wmciekrkefmcgbbztnxd.supabase.co";
+
+
+    /*
+      IMPORTANT:
+
+      Put your REAL Supabase PUBLISHABLE KEY here.
+
+      Do NOT use:
+      - service_role
+      - secret key
+    */
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_iXT5cqBFNvhSKczQ4ly9dA_o5L3zbku";
+
+
+    let supabaseClient = null;
+
+
+    /*
+      Only initialize Supabase
+      when the publishable key is available.
+    */
+
+    if (
+      window.supabase &&
+      SUPABASE_PUBLISHABLE_KEY &&
+      !SUPABASE_PUBLISHABLE_KEY.includes(
+        "PASTE_YOUR"
+      )
+    ) {
+
+      try {
+
+        supabaseClient =
+          window.supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY
+          );
+
+      } catch (error) {
+
+        console.error(
+          "Supabase initialization error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       API
+    ===================================================== */
+
+    const API_URL =
+      window.location.origin + "/predict";
+
+
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
+
+    const chatWindow =
+      document.getElementById(
+        "chatWindow"
+      );
+
+
+    const userInput =
+      document.getElementById(
+        "userInput"
+      );
+
+
+    const langSelect =
+      document.getElementById(
+        "langSelect"
+      );
+
+
+    const googleLoginBtn =
+      document.getElementById(
+        "googleLoginBtn"
+      );
+
+
+    const loginUser =
+      document.getElementById(
+        "loginUser"
+      );
+
+
+    const userAvatar =
+      document.getElementById(
+        "userAvatar"
+      );
+
+
+    const userName =
+      document.getElementById(
+        "userName"
+      );
+
+
+    const userEmail =
+      document.getElementById(
+        "userEmail"
+      );
+
+
+    /* =====================================================
+       GOOGLE LOGIN
+    ===================================================== */
+
+    googleLoginBtn.addEventListener(
+      "click",
+      async function () {
+
+        if (!supabaseClient) {
+
+          alert(
+            "Supabase publishable key is not configured."
+          );
+
+          return;
+        }
+
+
+        try {
+
+          const result =
+            await supabaseClient.auth.signInWithOAuth({
+
+              provider: "google",
+
+              options: {
+
+                redirectTo:
+                  window.location.origin
+
+              }
+
+            });
+
+
+          if (result.error) {
+
+            console.error(
+              result.error
+            );
+
+            alert(
+              "Google login failed: " +
+              result.error.message
+            );
+
+          }
+
+        } catch (error) {
+
+          console.error(error);
+
+          alert(
+            "Unable to start Google login."
+          );
+
+        }
+
+      }
+    );
+
+
+    /* =====================================================
+       CHECK LOGIN
+    ===================================================== */
+
+    async function checkUser() {
+
+      if (!supabaseClient) {
+
+        return;
+
+      }
+
+
+      try {
+
+        const result =
+          await supabaseClient.auth.getSession();
+
+
+        const session =
+          result.data.session;
+
+
+        updateUserUI(session);
+
+      } catch (error) {
+
+        console.error(
+          "Session error:",
+          error
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       UPDATE USER UI
+    ===================================================== */
+
+    function updateUserUI(session) {
+
+      if (
+        session &&
+        session.user
+      ) {
+
+        const user =
+          session.user;
+
+
+        googleLoginBtn.style.display =
+          "none";
+
+
+        loginUser.style.display =
+          "flex";
+
+
+        userEmail.textContent =
+          user.email || "";
+
+
+        userName.textContent =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          "User";
+
+
+        userAvatar.src =
+          user.user_metadata?.avatar_url ||
+          "logo.png";
+
+      }
+
+      else {
+
+        googleLoginBtn.style.display =
+          "block";
+
+
+        loginUser.style.display =
+          "none";
+
+      }
+
+    }
+
+
+    /* =====================================================
+       AUTH STATE
+    ===================================================== */
+
+    if (supabaseClient) {
+
+      supabaseClient.auth.onAuthStateChange(
+        function (_event, session) {
+
+          updateUserUI(session);
+
+        }
+      );
+
+    }
+
+
+    /* =====================================================
+       LOGOUT
+    ===================================================== */
+
+    async function logout() {
+
+      if (!supabaseClient) {
+
+        return;
+
+      }
+
+
+      try {
+
+        await supabaseClient.auth.signOut();
+
+        updateUserUI(null);
+
+      } catch (error) {
+
+        console.error(error);
+
+      }
+
+    }
+
+
+    /* =====================================================
+       ADD MESSAGE
+    ===================================================== */
+
+    function addMessage(
+      text,
+      sender,
+      meta,
+      imageBase64
+    ) {
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.className =
+        "msg " + sender;
+
+
+      if (imageBase64) {
+
+        div.appendChild(
+          document.createTextNode(
+            text || ""
+          )
+        );
+
+
+        const img =
+          document.createElement(
+            "img"
+          );
+
+
+        img.src =
+          "data:image/png;base64," +
+          imageBase64;
+
+
+        img.alt =
+          "Healthcare image";
+
+
+        div.appendChild(img);
+
+      }
+
+      else {
+
+        const safeText =
+          escapeHTML(
+            text || ""
+          );
+
+
+        const linked =
+          safeText.replace(
+            /(https?:\/\/[^\s]+)/g,
+            '<a href="$1" target="_blank" rel="noopener">$1</a>'
+          );
+
+
+        div.innerHTML =
+          linked;
+
+      }
+
+
+      if (meta) {
+
+        const metaEl =
+          document.createElement(
+            "span"
+          );
+
+
+        metaEl.className =
+          "meta";
+
+
+        metaEl.textContent =
+          meta;
+
+
+        div.appendChild(
+          metaEl
+        );
+
+      }
+
+
+      chatWindow.appendChild(
+        div
+      );
+
+
+      chatWindow.scrollTop =
+        chatWindow.scrollHeight;
+
+    }
+
+
+    /* =====================================================
+       HTML ESCAPE
+    ===================================================== */
+
+    function escapeHTML(text) {
+
+      const div =
+        document.createElement(
+          "div"
+        );
+
+
+      div.textContent =
+        text;
+
+
+      return div.innerHTML;
+
+    }
+
+
+    /* =====================================================
+       QUICK REPLIES
+    ===================================================== */
+
+    async function sendQuick(text) {
+
+      userInput.value =
+        text;
+
+
+      await sendMessage();
+
+    }
+
+
+    /* =====================================================
+       SEND MESSAGE
+    ===================================================== */
+
+    async function sendMessage() {
+
+      const text =
+        userInput.value.trim();
+
+
+      if (!text) {
+
+        return;
+
+      }
+
+
+      /* ==========================================
+         NAME QUESTION
+      ========================================== */
+
+      const lowerMessage =
+        text.toLowerCase();
+
+
+      if (
+        lowerMessage ===
+        "what is your name" ||
+
+        lowerMessage ===
+        "what's your name" ||
+
+        lowerMessage ===
+        "who are you" ||
+
+        lowerMessage ===
+        "your name"
+      ) {
+
+        const welcome =
+          document.getElementById(
+            "welcome"
+          );
+
+
+        if (welcome) {
+
+          welcome.remove();
+
+        }
+
+
+        addMessage(
+          text,
+          "user"
+        );
+
+
+        userInput.value =
+          "";
+
+
+        addMessage(
+          "I'm Smily 😊, your AI Healthcare Assistant.",
+          "bot"
+        );
+
+
+        return;
+
+      }
+
+
+      /* ==========================================
+         REMOVE WELCOME
+      ========================================== */
+
+      const welcome =
+        document.getElementById(
+          "welcome"
+        );
+
+
+      if (welcome) {
+
+        welcome.remove();
+
+      }
+
+
+      /* ==========================================
+         USER MESSAGE
+      ========================================== */
+
+      addMessage(
+        text,
+        "user"
+      );
+
+
+      userInput.value =
+        "";
+
+
+      /* ==========================================
+         TYPING MESSAGE
+      ========================================== */
+
+      const thinkingMsg =
+        document.createElement(
+          "div"
+        );
+
+
+      thinkingMsg.className =
+        "msg bot";
+
+
+      thinkingMsg.textContent =
+        "Smily is thinking...";
+
+
+      chatWindow.appendChild(
+        thinkingMsg
+      );
+
+
+      chatWindow.scrollTop =
+        chatWindow.scrollHeight;
+
+
+      try {
+
+        /* ========================================
+           SESSION
+        ======================================== */
+
+        let session = null;
+
+
+        if (supabaseClient) {
+
+          try {
+
+            const result =
+              await supabaseClient.auth.getSession();
+
+
+            session =
+              result.data.session;
+
+          } catch (authError) {
+
+            console.warn(
+              "Supabase session unavailable:",
+              authError
+            );
+
+          }
+
+        }
+
+
+        /* ========================================
+           HEADERS
+        ======================================== */
+
+        const headers = {
+
+          "Content-Type":
+            "application/json"
+
+        };
+
+
+        if (
+          session &&
+          session.access_token
+        ) {
+
+          headers[
+            "Authorization"
+          ] =
+            "Bearer " +
+            session.access_token;
+
+        }
+
+
+        /* ========================================
+           API REQUEST
+        ======================================== */
+
+        const res =
+          await fetch(
+            API_URL,
+            {
+
+              method: "POST",
+
+              headers: headers,
+
+              body:
+                JSON.stringify({
+
+                  text: text,
+
+                  lang:
+                    langSelect.value
+
+                })
+
+            }
+          );
+
+
+        if (!res.ok) {
+
+          throw new Error(
+            "Server error " +
+            res.status
+          );
+
+        }
+
+
+        /* ========================================
+           JSON
+        ======================================== */
+
+        const data =
+          await res.json();
+
+
+        thinkingMsg.remove();
+
+
+        /* ========================================
+           ANSWER
+        ======================================== */
+
+        const answer =
+          data.answer ||
+          "Sorry, I couldn't find an answer.";
+
+
+        const confidence =
+          Number(
+            data.confidence || 0
+          );
+
+
+        const confidencePct =
+          (
+            confidence * 100
+          ).toFixed(1);
+
+
+        addMessage(
+
+          answer,
+
+          "bot",
+
+          `Confidence: ${confidencePct}%`,
+
+          data.image_base64
+
+        );
+
+      }
+
+
+      catch (err) {
+
+        console.error(
+          "Chatbot error:",
+          err
+        );
+
+
+        thinkingMsg.remove();
+
+
+        addMessage(
+
+          "⚠️ Couldn't reach the chatbot server. Please make sure Uvicorn is running.",
+
+          "bot"
+
+        );
+
+      }
+
+    }
+
+
+    /* =====================================================
+       NEW CHAT
+    ===================================================== */
+
+    function newChat() {
+
+      chatWindow.innerHTML = `
+
+        <div
+          class="welcome"
+          id="welcome"
+        >
+
+          <img
+            src="logo.png"
+            class="welcome-logo"
+            alt="Smily"
+          >
+
+          <h2>
+            How can I help you today?
+          </h2>
+
+          <p>
+            I'm Smily, your AI healthcare assistant.
+            Ask a health-related question and
+            I'll help you understand it.
+          </p>
+
+        </div>
+
+      `;
+
+
+      userInput.focus();
+
+    }
+
+
+    /* =====================================================
+       ENTER KEY
+    ===================================================== */
+
+    userInput.addEventListener(
+      "keydown",
+      function (event) {
+
+        if (
+          event.key ===
+          "Enter"
+        ) {
+
+          event.preventDefault();
+
+          sendMessage();
+
+        }
+
+      }
+    );
+
+
+    /* =====================================================
+       START
+    ===================================================== */
+
+    checkUser();
+
+  </script>
+
+</body>
+
+</html>
