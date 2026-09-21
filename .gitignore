@@ -3,7 +3,5 @@ venv/
 __pycache__/
 *.pyc
 .env
-backend/qa_dataset.csv
-backend/question_embeddings.npy
 model/qa_dataset.csv
 model/question_embeddings.npy
