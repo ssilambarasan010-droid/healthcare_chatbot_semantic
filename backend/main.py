@@ -254,3 +254,9 @@ def predict(request: ChatRequest):
 # Serve any other static assets (css/js/images) placed next to index.html
 if os.path.isdir("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve files placed next to index.html (e.g. logo.png, favicon) at their
+# root paths, e.g. http://127.0.0.1:8000/logo.png. This mount is registered
+# LAST so the API routes above (/health, /predict) take precedence.
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app.mount("/", StaticFiles(directory=_BASE_DIR), name="static-root")

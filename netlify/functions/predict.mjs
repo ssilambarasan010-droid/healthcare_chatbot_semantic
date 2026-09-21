@@ -4,6 +4,12 @@ export const handler = async (event) => {
       if (event.httpMethod !== "POST") {
          return {
             statusCode: 405,
+            headers: {
+               "Content-Type": "application/json",
+               "Access-Control-Allow-Origin": "*",
+               "Access-Control-Allow-Methods": "POST, OPTIONS",
+               "Access-Control-Allow-Headers": "Content-Type",
+            },
             body: JSON.stringify({
                error: "Only POST method is allowed",
             }),
@@ -12,18 +18,29 @@ export const handler = async (event) => {
 
       const body = JSON.parse(event.body || "{}");
 
-      const question = String(
+      const originalQuestion = String(
          body.text || body.question || ""
-      ).toLowerCase().trim();
+      ).trim();
+
+      const question = originalQuestion.toLowerCase();
 
       if (!question) {
          return {
             statusCode: 400,
+            headers: {
+               "Content-Type": "application/json",
+               "Access-Control-Allow-Origin": "*",
+            },
             body: JSON.stringify({
                error: "Question is required",
             }),
          };
       }
+
+      // Google search link based on user's question
+      const googleSearchUrl =
+         "https://www.google.com/search?q=" +
+         encodeURIComponent(originalQuestion + " healthcare information");
 
       let answer = "";
       let confidence = 0.85;
@@ -93,11 +110,14 @@ export const handler = async (event) => {
          headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
          },
          body: JSON.stringify({
             answer,
             confidence,
             status: "success",
+            googleSearchUrl,
          }),
       };
    } catch (error) {
@@ -105,6 +125,10 @@ export const handler = async (event) => {
 
       return {
          statusCode: 500,
+         headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+         },
          body: JSON.stringify({
             error: "Internal server error",
          }),
